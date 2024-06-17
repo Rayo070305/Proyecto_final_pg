@@ -3,10 +3,10 @@ from pygame.locals import *
 from OpenGL.GL import *
 from OpenGL.GLUT import *
 from OpenGL.GLU import *
-from pygame import mixer
+
 import math
 
-
+ 
 
 def load_texture(filename):
     texture_surface = pygame.image.load(filename)
@@ -28,6 +28,65 @@ def draw_sphere(radius, slices, stacks, texture_id):
     glBindTexture(GL_TEXTURE_2D, texture_id)
     gluSphere(quad, radius, slices, stacks)
 
+def draw_skybox(size, texture):
+    glDisable(GL_LIGHTING)
+    glEnable(GL_TEXTURE_2D)
+
+
+    glPushMatrix()
+    glTranslatef(0.0, 0.0, 0.0)
+
+    glBindTexture(GL_TEXTURE_2D, texture)
+
+    # Front
+    glBegin(GL_QUADS)
+    glTexCoord2f(0, 0); glVertex3f(-size, -size, -size)
+    glTexCoord2f(1, 0); glVertex3f(size, -size, -size)
+    glTexCoord2f(1, 1); glVertex3f(size, size, -size)
+    glTexCoord2f(0, 1); glVertex3f(-size, size, -size)
+    glEnd()
+
+
+
+    # Left
+    glBegin(GL_QUADS)
+    glTexCoord2f(0, 0); glVertex3f(-size, -size, size)
+    glTexCoord2f(1, 0); glVertex3f(-size, -size, -size)
+    glTexCoord2f(1, 1); glVertex3f(-size, size, -size)
+    glTexCoord2f(0, 1); glVertex3f(-size, size, size)
+    glEnd()
+
+    # Right
+    glBegin(GL_QUADS)
+    glTexCoord2f(0, 0); glVertex3f(size, -size, -size)
+    glTexCoord2f(1, 0); glVertex3f(size, -size, size)
+    glTexCoord2f(1, 1); glVertex3f(size, size, size)
+    glTexCoord2f(0, 1); glVertex3f(size, size, -size)
+    glEnd()
+
+    # Top
+    glBegin(GL_QUADS)
+    glTexCoord2f(0, 0); glVertex3f(-size, size, -size)
+    glTexCoord2f(1, 0); glVertex3f(size, size, -size)
+    glTexCoord2f(1, 1); glVertex3f(size, size, size)
+    glTexCoord2f(0, 1); glVertex3f(-size, size, size)
+    glEnd()
+
+    # Bottom
+    glBegin(GL_QUADS)
+    glTexCoord2f(0, 0); glVertex3f(-size, -size, size)
+    glTexCoord2f(1, 0); glVertex3f(size, -size, size)
+    glTexCoord2f(1, 1); glVertex3f(size, -size, -size)
+    glTexCoord2f(0, 1); glVertex3f(-size, -size, -size)
+    glEnd()
+
+
+
+
+    glPopMatrix()
+    glDisable(GL_LIGHTING)
+
+    glDepthMask(GL_TRUE)
 
 
 def main():
@@ -42,6 +101,9 @@ def main():
     gluPerspective(60, (display[0]/display[1]), 0.1, 50.0)
     glTranslatef(0.0, 0.0, -10)
 
+
+
+
     sun_texture_id = load_texture("image/suns.jpg")
     planet1_texture_id = load_texture("image/mars4k.jpg")
     planet2_texture_id = load_texture("image/venus.jpg")
@@ -50,7 +112,7 @@ def main():
     planet5_texture_id = load_texture("image/jupiter.jpg")
     planet6_texture_id = load_texture("image/saturn.jpg")
     angle = 0  # Una sola variable de ángulo para la rotación
-    
+  
     mouse_prev_pos = None
     mouse_pressed = False
 
@@ -96,7 +158,7 @@ def main():
         glPopMatrix()
         # Dibujar el skybox
 
-        
+        draw_skybox(20, skybox_texture)
 
 
         # Dibujar el sol
