@@ -5,16 +5,10 @@ from OpenGL.GLU import *
 import math
 import glm
 import numpy as np
-from pygame import mixer
-
-def music():
-    mixer.init()
-    mixer.music.load('sounds/relax.mp3')
-    mixer.music.play()
-    pygame.time.delay(2000)  # Espera 2 segundos antes de continuar con el bucle principal
+import os
 
 class Camera:
-    def __init__(self, width, height, position):
+    def _init_(self, width, height, position):
         self.Position = glm.vec3(position)
         self.Orientation = glm.vec3(0.0, 0.0, -1.0)
         self.Up = glm.vec3(0.0, 1.0, 0.0)
@@ -48,9 +42,9 @@ class Camera:
         if keys[K_LCTRL]:
             self.Position += self.speed * -self.Up
         if keys[K_LSHIFT]:
-            self.speed = 0.4
+            self.speed = 1.0
         else:
-            self.speed = 0.1
+            self.speed = 1.0
 
         if pygame.mouse.get_pressed()[0]:
             pygame.mouse.set_visible(False)
@@ -87,22 +81,76 @@ def load_texture(filename):
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, texture_data)
     return texture_id
 
+def load_textures_from_folder(folder_path):
+    textures = []
+
+    files = os.listdir(folder_path)
+    image_files = [f for f in files if os.path.isfile(os.path.join(folder_path, f)) and f.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp'))]
+
+    for file in image_files:
+        file_path = os.path.join(folder_path, file)
+        texture_id = load_texture(file_path)
+        textures.append(texture_id)
+
+    return textures
+
+def load_obj(filename):
+    vertices = []
+    faces = []
+    tex_coords = []
+    material_indices = []
+
+    current_material_index = -1
+
+    with open(filename, 'r') as f:
+        for line in f:
+            if line.startswith('v '):
+                vertices.append(list(map(float, line.strip().split()[1:4])))
+            elif line.startswith('f '):
+                face = [int(i.split('/')[0]) - 1 for i in line.strip().split()[1:]]
+                faces.append(face)
+                material_indices.append(current_material_index)
+            elif line.startswith('vt '):
+                tex_coords.append(list(map(float, line.strip().split()[1:3])))
+            elif line.startswith('usemtl '):
+                material_name = line.strip().split()[1]
+                if material_name.startswith('texture'):
+                    current_material_index = int(material_name[len('texture'):]) - 1
+                else:
+                    current_material_index = -1
+
+    return vertices, faces, tex_coords, material_indices
+
+def draw_obj(vertices, faces, tex_coords, material_indices, textures):
+    glEnable(GL_TEXTURE_2D)
+
+    for i, face in enumerate(faces):
+        material_index = material_indices[i]
+        if material_index >= 0 and material_index < len(textures):
+            glBindTexture(GL_TEXTURE_2D, textures[material_index])
+
+        glBegin(GL_TRIANGLES)
+        for vertex_index in face:
+            glTexCoord2f(tex_coords[vertex_index][0], tex_coords[vertex_index][1])
+            glVertex3fv(vertices[vertex_index])
+        glEnd()
+
 def draw_sphere(radius, slices, stacks, texture_id):
     quad = gluNewQuadric()
     gluQuadricNormals(quad, GLU_SMOOTH)
     gluQuadricTexture(quad, GL_TRUE)
-    
+
     glBindTexture(GL_TEXTURE_2D, texture_id)
     gluSphere(quad, radius, slices, stacks)
 
 def draw_skybox(size, texture):
     glDisable(GL_LIGHTING)
     glEnable(GL_TEXTURE_2D)
-    
+
     glPushMatrix()
     glTranslatef(0.0, 0.0, 0.0)
     glBindTexture(GL_TEXTURE_2D, texture)
-    
+
     # Front
     glBegin(GL_QUADS)
     glTexCoord2f(0, 0); glVertex3f(-size, -size, -size)
@@ -142,10 +190,16 @@ def draw_skybox(size, texture):
     glTexCoord2f(1, 1); glVertex3f(size, -size, -size)
     glTexCoord2f(0, 1); glVertex3f(-size, -size, -size)
     glEnd()
-    
+
     glPopMatrix()
     glDisable(GL_LIGHTING)
     glDepthMask(GL_TRUE)
+
+def music():
+    pygame.mixer.init()
+    pygame.mixer.music.load('sounds/relax.mp3')
+    pygame.mixer.music.play()
+    pygame.time.delay(2000)  # Espera 2 segundos antes de continuar con el bucle principal
 
 def main():
     pygame.init()
@@ -158,7 +212,7 @@ def main():
 
     gluPerspective(60, (display[0] / display[1]), 0.1, 50.0)
 
-    camera = Camera(display[0], display[1], [0.0, 0.0, -10.0])  # Crear la cámara
+    camera = Camera(display[0], display[1], [0.0, 0.0, 10.0])  # Crear la cámara
 
     sun_texture_id = load_texture("image/suns.jpg")
     planet1_texture_id = load_texture("image/mars4k.jpg")
@@ -167,7 +221,25 @@ def main():
     planet4_texture_id = load_texture("image/neptune.jpg")
     planet5_texture_id = load_texture("image/jupiter.jpg")
     planet6_texture_id = load_texture("image/saturn.jpg")
+    planet7_texture_id = load_texture("image/uranus.jpg")
+    planet8_texture_id = load_texture("image/mer1.jpg")
     skybox_texture = load_texture("skybox/sta.jpg")
+
+    # Cargar modelos OBJ
+    models_folder = 'modelo'
+    obj_files = ['Satellite.obj']  # Lista de archivos OBJ a cargar
+    obj_textures_folder = 'modelo/Textures/'
+
+    # Cargar texturas de la carpeta de texturas de modelos
+    obj_textures = load_textures_from_folder(obj_textures_folder)
+
+    # Diccionario para almacenar los modelos cargados
+    loaded_models = {}
+
+    for obj_file in obj_files:
+        obj_filename = os.path.join(models_folder, obj_file)
+        vertices, faces, tex_coords, material_indices = load_obj(obj_filename)
+        loaded_models[obj_file] = (vertices, faces, tex_coords, material_indices)
 
     angle = 0
     clock = pygame.time.Clock()
@@ -177,7 +249,7 @@ def main():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 quit()
-        
+
         camera.inputs()  # Actualizar inputs de la cámara
         camera.update_matrix(60.0, 0.1, 50.0)  # Actualizar matriz de la cámara
 
@@ -196,10 +268,10 @@ def main():
         glPopMatrix()
 
         # Dibujar los planetas girando alrededor del sol
-                # Dibujar los planetas girando alrededor del sol
-        planet_distances = [2.0, 4.0, 5.0, 8.0, 10.0, 12.0]
-        planet_textures = [planet1_texture_id, planet2_texture_id, planet3_texture_id, planet4_texture_id, planet5_texture_id, planet6_texture_id]
-        planet_sizes = [0.3, 0.4, 0.5, 0.5, 0.5, 0.5]
+        planet_distances = [2.0, 4.0, 5.0, 8.0, 10.0, 12.0, 14.0, 16.0]
+        planet_textures = [planet1_texture_id, planet2_texture_id, planet3_texture_id, planet4_texture_id,
+                           planet5_texture_id, planet6_texture_id, planet7_texture_id, planet8_texture_id]
+        planet_sizes = [0.3, 0.4, 0.5, 0.5, 0.5, 0.5, 0.3, 0.3]
 
         for i in range(len(planet_distances)):
             glPushMatrix()
@@ -209,11 +281,18 @@ def main():
             draw_sphere(planet_sizes[i], 20, 20, planet_textures[i])
             glPopMatrix()
 
+        # Dibujar el modelo Satellite.obj girando alrededor del sol
+        glPushMatrix()
+        glRotatef(angle, 0, 1, 0)  # Girar junto con los planetas
+        glTranslatef(0.0, 0.0, -6.0)  # Mover al lado derecho del sol
+        glScalef(0.02, 0.02, 0.02)  # Escalar para hacerlo más pequeño
+        draw_obj(loaded_models['Satellite.obj'][0], loaded_models['Satellite.obj'][1], loaded_models['Satellite.obj'][2], loaded_models['Satellite.obj'][3], obj_textures)
+        glPopMatrix()
+
         pygame.display.flip()
-        angle += 0.1  # Incremento de ángulo para la animación
+        angle += 0.1  # Incrementar el ángulo para la animación
         clock.tick(60)  # Asegurar 60 FPS
 
-if __name__ == "__main__":
+if _name_ == "_main_":
     music()  # Reproducir música
     main()   # Iniciar el bucle principal del programa
-
