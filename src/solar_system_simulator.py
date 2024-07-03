@@ -111,6 +111,7 @@ def load_textures_from_folder(folder_path):
 
     return textures
 
+
 def load_obj(filename):
     vertices = []
     faces = []
@@ -137,6 +138,7 @@ def load_obj(filename):
                     current_material_index = -1
 
     return vertices, faces, tex_coords, material_indices
+
 
 def draw_obj(vertices, faces, tex_coords, material_indices, textures):
     glEnable(GL_TEXTURE_2D)
@@ -200,6 +202,14 @@ def draw_skybox(size, texture):
     glTexCoord2f(0, 1); glVertex3f(-size, size, size)
     glEnd()
 
+    # Back
+    glBegin(GL_QUADS)
+    glTexCoord2f(0, 0); glVertex3f(-size, -size, size)
+    glTexCoord2f(1, 0); glVertex3f(size, -size, size)
+    glTexCoord2f(1, 1); glVertex3f(size, size, size)
+    glTexCoord2f(0, 1); glVertex3f(-size, size, size)
+    glEnd()
+
     # Bottom
     glBegin(GL_QUADS)
     glTexCoord2f(0, 0); glVertex3f(-size, -size, size)
@@ -221,9 +231,21 @@ def draw_orbit(radius, segments=100):
         glVertex3f(x, 0.0, z)
     glEnd()
 
+def draw_rings(inner_radius, outer_radius, segments=100):
+    glBegin(GL_QUAD_STRIP)
+    for i in range(segments + 1):
+        theta = 2.0 * math.pi * i / segments
+        x = math.cos(theta)
+        z = math.sin(theta)
+        glTexCoord2f(i / segments, 1)
+        glVertex3f(outer_radius * x, 0.0, outer_radius * z)
+        glTexCoord2f(i / segments, 0)
+        glVertex3f(inner_radius * x, 0.0, inner_radius * z)
+    glEnd()
+
 def music():
     pygame.mixer.init()
-    pygame.mixer.music.load('sounds/relax.mp3')
+    pygame.mixer.music.load('OPENGL PROJECT/sounds/relax.mp3')
     pygame.mixer.music.play()
     pygame.time.delay(2000)  # Espera 2 segundos antes de continuar con el bucle principal
 
@@ -238,38 +260,40 @@ def main():
 
     gluPerspective(60, (display[0] / display[1]), 0.1, 50.0)
 
-    camera = Camera(display[0], display[1], [0.0, 0.0, 10.0])  # Crear la cámara
+    skybox_size = 50 # Define el tamaño del skybox
+    camera = Camera(display[0], display[1], [0.0, 0.0, 10.0], skybox_size)  # Crear la cámara
 
-    sun_texture_id = load_texture("image/suns.jpg")
-    planet1_texture_id = load_texture("image/mars4k.jpg")
-    planet2_texture_id = load_texture("image/venus.jpg")
-    planet3_texture_id = load_texture("image/earth.jpg")
-    planet4_texture_id = load_texture("image/neptune.jpg")
-    planet5_texture_id = load_texture("image/jupiter.jpg")
-    planet6_texture_id = load_texture("image/saturn.jpg")
-    planet7_texture_id = load_texture("image/uranus.jpg")
-    planet8_texture_id = load_texture("image/mer1.jpg")
-    skybox_texture = load_texture("skybox/sta.jpg")
+    sun_texture_id = load_texture("OPENGL PROJECT/image/suns.jpg")
+    planet1_texture_id = load_texture("OPENGL PROJECT/image/mercu.jpg")
+    planet2_texture_id = load_texture("OPENGL PROJECT/image/venus.jpg")
+    planet3_texture_id = load_texture("OPENGL PROJECT/image/earth.jpg")
+    planet4_texture_id = load_texture("OPENGL PROJECT/image/mars.jpg")
+    planet5_texture_id = load_texture("OPENGL PROJECT/image/jupiter.jpg")
+    planet6_texture_id = load_texture("OPENGL PROJECT/image/saturn.jpg")
+    planet7_texture_id = load_texture("OPENGL PROJECT/image/uranus.jpg")
+    planet8_texture_id = load_texture("OPENGL PROJECT/image/neptune.jpg")
+    ring_texture_id = load_texture("OPENGL PROJECT/image/rings.jpg")  # los anillos de Saturno
+    skybox_texture = load_texture("OPENGL PROJECT/skybox/stars.jpg")   #textura del skybox
 
-    # Cargar modelos OBJ
-    models_folder = 'modelo'
-    obj_files = ['Satellite.obj']  # Lista de archivos OBJ a cargar
-    obj_textures_folder = 'modelo/Textures/'
+     # Cargar texturas
+    models_folder = 'OPENGL PROJECT/modelo'
+    obj_files = ['Satellite.obj']
+    obj_textures_folder = 'OPENGL PROJECT/modelo/Textures/'
 
-    # Cargar texturas de la carpeta de texturas de modelos
     obj_textures = load_textures_from_folder(obj_textures_folder)
-
-    # Diccionario para almacenar los modelos cargados
     loaded_models = {}
 
     for obj_file in obj_files:
         obj_filename = os.path.join(models_folder, obj_file)
         vertices, faces, tex_coords, material_indices = load_obj(obj_filename)
         loaded_models[obj_file] = (vertices, faces, tex_coords, material_indices)
-
     angle = 0
     clock = pygame.time.Clock()
-
+    
+    
+    satellite_speed_multiplier = 15  # Ajusta este valor para aumentar la velocidad del satélite
+    satellite_angle = 0.0   
+    
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -285,7 +309,7 @@ def main():
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
         # Dibujar el skybox
-        draw_skybox(20, skybox_texture)
+        draw_skybox(skybox_size, skybox_texture)
 
         # Dibujar el sol
         glPushMatrix()
@@ -293,32 +317,52 @@ def main():
         draw_sphere(3.0, 30, 30, sun_texture_id)
         glPopMatrix()
 
-        # Dibujar los planetas girando alrededor del sol
-        planet_distances = [2.0, 4.0, 5.0, 8.0, 10.0, 12.0, 14.0, 16.0]
-        planet_textures = [planet1_texture_id, planet2_texture_id, planet3_texture_id, planet4_texture_id,
-                           planet5_texture_id, planet6_texture_id, planet7_texture_id, planet8_texture_id]
-        planet_sizes = [0.3, 0.4, 0.5, 0.5, 0.5, 0.5, 0.3, 0.3]
+        # Dibujar los planetas girando alrededor del sol y sus órbitas
+        planet_distances = [6.0, 8.0, 10.0, 12.0, 14.0, 16.0, 18.0, 20.0]
+        planet_textures = [planet1_texture_id, planet2_texture_id, planet3_texture_id, planet4_texture_id, planet5_texture_id, planet6_texture_id, planet7_texture_id, planet8_texture_id]
+        planet_sizes = [0.3, 0.4, 0.5, 0.45, 1.0, 0.9, 0.6, 0.55]
+        planet_speeds = [4, 2.8, 2.6, 2.4, 2.2, 2, 1.8, 1.6]
 
         for i in range(len(planet_distances)):
             glPushMatrix()
-            glRotatef(angle + i * 45, 0, 1, 0)  # Desfase de ángulo para que giren uno detrás del otro
-            glTranslatef(planet_distances[i], 0.0, 0.0)
+            # Dibujar la órbita
+            glColor3f(1.0, 1.0, 1.0)
+            draw_orbit(planet_distances[i])
+            glPopMatrix()
+            
+        angle += 0.01  # Incrementar el ángulo para la animación de los planetas
+        satellite_angle += 0.1 * satellite_speed_multiplier  # Incrementar el ángulo del satélite de forma independiente
+        
+        for i in range(len(planet_distances)):
+            glPushMatrix()
+            glRotatef(angle * planet_speeds[i], 0, 1, 0)
+            glTranslatef(planet_distances[i] * math.cos(angle * planet_speeds[i]), 0.0,
+                         planet_distances[i] * math.sin(angle * planet_speeds[i]))
             glBindTexture(GL_TEXTURE_2D, planet_textures[i])
             draw_sphere(planet_sizes[i], 20, 20, planet_textures[i])
+            if i == 5:  # Añadir anillos para el sexto planeta (Saturno)
+                glBindTexture(GL_TEXTURE_2D, ring_texture_id)
+                glPushMatrix()
+                glRotatef(45, 1, 0, 0)  # Rotar los anillos 45 grados alrededor del eje x
+                draw_rings(1.02 * planet_sizes[i], 1.3 * planet_sizes[i])
+
+
+                glPopMatrix()
             glPopMatrix()
 
         # Dibujar el modelo Satellite.obj girando alrededor del sol
         glPushMatrix()
-        glRotatef(angle, 0, 1, 0)  # Girar junto con los planetas
-        glTranslatef(0.0, 0.0, -6.0)  # Mover al lado derecho del sol
+        glRotatef(-satellite_angle, 0, 1, 0)  # Girar en la dirección opuesta a los planetas con mayor velocidad
+        glTranslatef(9.0, 0.0, 2.0)  # Mover al lado derecho del sol
         glScalef(0.02, 0.02, 0.02)  # Escalar para hacerlo más pequeño
         draw_obj(loaded_models['Satellite.obj'][0], loaded_models['Satellite.obj'][1], loaded_models['Satellite.obj'][2], loaded_models['Satellite.obj'][3], obj_textures)
         glPopMatrix()
 
         pygame.display.flip()
-        angle += 0.1  # Incrementar el ángulo para la animación
+      
         clock.tick(60)  # Asegurar 60 FPS
 
-if _name_ == "_main_":
+
+if __name__ == "__main__":
     music()  # Reproducir música
     main()   # Iniciar el bucle principal del programa
