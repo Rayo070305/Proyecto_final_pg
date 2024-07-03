@@ -1,0 +1,57 @@
+# Blender 4.1.1 MTL File: 'Satellite.blend'
+# www.blender.org
+
+newmtl Antenna
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd Textures/satellite_Antenna_BaseColor.jpg
+map_Ns Textures/satellite_Antenna_Roughness.jpg
+map_refl Textures/satellite_Antenna_Metallic.jpg
+
+newmtl Couro
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd Textures/satellite_Couro_BaseColor.jpg
+map_Ns Textures/satellite_Couro_Roughness.jpg
+map_refl Textures/satellite_Couro_Metallic.jpg
+
+newmtl Pinos
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd Textures/satellite_Pinos_BaseColor.jpg
+map_Ns Textures/satellite_Pinos_Roughness.jpg
+map_refl Textures/satellite_Pinos_Metallic.jpg
+
+newmtl Placas
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd Textures/satellite_Placas_BaseColor.jpg
+map_Ns Textures/satellite_Placas_Roughness.jpg
+map_refl Textures/satellite_Placas_Metallic.jpg
+
+newmtl Satélite
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd Textures/satellite_Satélite_BaseColor.jpg
+map_Ns Textures/satellite_Satélite_Roughness.jpg
+map_refl Textures/satellite_Satélite_Metallic.jpg
