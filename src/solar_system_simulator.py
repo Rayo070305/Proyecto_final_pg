@@ -8,7 +8,7 @@ import numpy as np
 import os
 
 class Camera:
-    def _init_(self, width, height, position):
+    def __init__(self, width, height, position, skybox_size):
         self.Position = glm.vec3(position)
         self.Orientation = glm.vec3(0.0, 0.0, -1.0)
         self.Up = glm.vec3(0.0, 1.0, 0.0)
@@ -17,7 +17,8 @@ class Camera:
         self.width = width
         self.height = height
         self.speed = 0.1
-        self.sensitivity = 100.0
+        self.sensitivity = 200.0  # Incrementar la sensibilidad para un movimiento más rápido
+        self.skybox_size = skybox_size
 
     def update_matrix(self, FOVdeg, near_plane, far_plane):
         view = glm.lookAt(self.Position, self.Position + self.Orientation, self.Up)
@@ -30,17 +31,29 @@ class Camera:
     def inputs(self):
         keys = pygame.key.get_pressed()
         if keys[K_w]:
-            self.Position += self.speed * self.Orientation
+            new_position = self.Position + self.speed * self.Orientation
+            if self.is_within_bounds(new_position):
+                self.Position = new_position
         if keys[K_a]:
-            self.Position += self.speed * -glm.normalize(glm.cross(self.Orientation, self.Up))
+            new_position = self.Position + self.speed * -glm.normalize(glm.cross(self.Orientation, self.Up))
+            if self.is_within_bounds(new_position):
+                self.Position = new_position
         if keys[K_s]:
-            self.Position += self.speed * -self.Orientation
+            new_position = self.Position + self.speed * -self.Orientation
+            if self.is_within_bounds(new_position):
+                self.Position = new_position
         if keys[K_d]:
-            self.Position += self.speed * glm.normalize(glm.cross(self.Orientation, self.Up))
+            new_position = self.Position + self.speed * glm.normalize(glm.cross(self.Orientation, self.Up))
+            if self.is_within_bounds(new_position):
+                self.Position = new_position
         if keys[K_SPACE]:
-            self.Position += self.speed * self.Up
+            new_position = self.Position + self.speed * self.Up
+            if self.is_within_bounds(new_position):
+                self.Position = new_position
         if keys[K_LCTRL]:
-            self.Position += self.speed * -self.Up
+            new_position = self.Position + self.speed * -self.Up
+            if self.is_within_bounds(new_position):
+                self.Position = new_position
         if keys[K_LSHIFT]:
             self.speed = 1.0
         else:
@@ -68,6 +81,10 @@ class Camera:
         else:
             pygame.mouse.set_visible(True)
             self.firstClick = True
+
+    def is_within_bounds(self, position):
+        limit = self.skybox_size - 1  # Limitar a un poco menos que el tamaño del skybox
+        return -limit <= position.x <= limit and -limit <= position.y <= limit and -limit <= position.z <= limit
 
 def load_texture(filename):
     texture_surface = pygame.image.load(filename)
