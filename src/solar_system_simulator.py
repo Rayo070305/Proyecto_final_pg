@@ -212,6 +212,15 @@ def draw_skybox(size, texture):
     glDisable(GL_LIGHTING)
     glDepthMask(GL_TRUE)
 
+def draw_orbit(radius, segments=100):
+    glBegin(GL_LINE_LOOP)
+    for i in range(segments):
+        theta = 2.0 * math.pi * i / segments
+        x = radius * math.cos(theta)
+        z = radius * math.sin(theta)
+        glVertex3f(x, 0.0, z)
+    glEnd()
+
 def music():
     pygame.mixer.init()
     pygame.mixer.music.load('sounds/relax.mp3')
