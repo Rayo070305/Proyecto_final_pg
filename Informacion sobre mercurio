@@ -3,15 +3,16 @@ import math
 import subprocess
 import sys
 
+# Inicialización de Pygame
 pygame.init()
 
 # Dimensiones de la pantalla
-width, height = 800, 600
+width, height = 1000, 600
 screen = pygame.display.set_mode((width, height))
-pygame.display.set_caption('informacion mercurio')
+pygame.display.set_caption('Información sobre Mercurio')
 
 # Cargar imagen de fondo
-background_image = pygame.image.load("skybox/space3.jpg")
+background_image = pygame.image.load("opengl project/skybox/sta.jpg")
 background_image = pygame.transform.scale(background_image, (width, height))
 
 # Colores
@@ -25,8 +26,8 @@ center = (width // 2, height // 2)
 # Radio del círculo (se ha reducido a la mitad)
 radius = min(width, height) // 6
 
-# Cargar la imagen del sol
-image = pygame.image.load("pg_project/image/mercury.jpg")
+# Cargar la imagen de Mercurio
+image = pygame.image.load("opengl project/image/mercu.jpg")
 original_rect = image.get_rect()
 
 # Escalar la imagen para que se ajuste al círculo
@@ -36,28 +37,36 @@ image = pygame.transform.scale(image, (2 * radius, 2 * radius))
 mask = pygame.Surface((2 * radius, 2 * radius), pygame.SRCALPHA)
 pygame.draw.circle(mask, (255, 255, 255, 255), (radius, radius), radius)
 
+# Cargar la imagen del meteorito
+meteorito_image = pygame.image.load("opengl project/image/asteorid.png")
+meteorito_image = pygame.transform.scale(meteorito_image, (100, 100))  # Ajusta el tamaño según sea necesario
+
+# Posición del meteorito en la esquina superior derecha
+meteorito_rect = meteorito_image.get_rect(topright=(width - 10, 10))
+
 # Definir el área del botón
 button_rect = pygame.Rect(10, 10, 100, 50)
 
 # Crear textos para la parte izquierda
 texts = [
+    "",
     "-------INFORMACION SOBRE MERCURIO------:",
-    "",
-    "Composición: Principalmente roca y metal.",
-    "",
-    "Temperatura de la superficie: Varía entre -173°C y más de 427°C.",
-    "",
-    "Diámetro: Aproximadamente 4,880 kilómetros.",
-    "",
-    "Distancia a la Tierra: Varía entre 77 y 222 millones de kilómetros.",
-    "",
-    "Edad: Formado hace unos 4.5 mil millones de años.",
-    "",
-    "Masa: Cerca de 0.06 veces la masa de la Tierra.",
-    "",
-    "Vida útil: No aplica como en las estrellas.",
-    "",
-    "Curiosidad: Es el planeta más cercano al Sol y tiene la órbita más excéntrica del sistema solar."
+    "","",
+    "COMPOSICION: Principalmente roca y metal.",
+    
+    "TEMPERATURA DE LA SUPERFICIE: Varía entre -173°C y más de 427°C.",
+    
+    "DIAMETRO: Aproximadamente 4,880 kilómetros.",
+    
+    "DISTANCIA DE LA TIERRA: Varía entre 77 y 222 millones de kilómetros.",
+    
+    "EDAD: Formado hace unos 4.5 mil millones de años.",
+    
+    "MASA: Cerca de 0.06 veces la masa de la Tierra.",
+    
+    "VIDA UTIL: No aplica como en las estrellas.",
+    
+    "CURIOSIDAD: Es el planeta más cercano al Sol y tiene la órbita más excéntrica del sistema solar."
 ]
 
 font = pygame.font.SysFont(None, 25)
@@ -67,9 +76,13 @@ clock = pygame.time.Clock()
 
 # Función para abrir la ventana anterior
 def open_previous_window():
-    subprocess.Popen(["python", "src/planets_menu.py"])
+    subprocess.Popen(["python", "opengl project/src/planets_menu.py"])
     pygame.quit()
     sys.exit()
+
+# Variables para la rotación
+angulo_planeta = 0
+velocidad_rotacion = 0.6
 
 running = True
 while running:
@@ -96,9 +109,17 @@ while running:
     for i, text_surface in enumerate(text_surfaces):
         screen.blit(text_surface, (20, 90 + i * 30))
 
-    # Dibujar la imagen dentro del círculo usando la máscara
+    # Dibujar imagen del meteorito en la esquina superior derecha
+    screen.blit(meteorito_image, meteorito_rect)
+
+    # Calcular la rotación del planeta
+    angulo_planeta += velocidad_rotacion
+    imagen_rotada = pygame.transform.rotate(image, angulo_planeta)
+    imagen_rect = imagen_rotada.get_rect(center=(center[0] + 280, center[1]))
+
+    # Dibujar la imagen de Mercurio dentro del círculo usando la máscara
     masked_image = pygame.Surface((2 * radius, 2 * radius), pygame.SRCALPHA)
-    masked_image.blit(image, (0, 0))
+    masked_image.blit(imagen_rotada, (imagen_rect.x - (center[0] + 280 - radius), imagen_rect.y - (center[1] - radius)))
     masked_image.blit(mask, (0, 0), None, pygame.BLEND_RGBA_MULT)
     screen.blit(masked_image, (center[0] + 280 - radius, center[1] - radius))
 
