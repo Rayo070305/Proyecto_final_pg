@@ -3,10 +3,15 @@ from pygame.locals import *
 from OpenGL.GL import *
 from OpenGL.GLUT import *
 from OpenGL.GLU import *
-
+from pygame import mixer
 import math
 
- 
+def music():
+    mixer.init()
+    mixer.music.load('OPENGL PROJECT/sounds/relax.mp3')
+    mixer.music.play()
+    # Espera 5 segundos antes de continuar con el bucle principal
+    pygame.time.delay(2000)  
 
 def load_texture(filename):
     texture_surface = pygame.image.load(filename)
@@ -104,15 +109,15 @@ def main():
 
 
 
-    sun_texture_id = load_texture("image/suns.jpg")
-    planet1_texture_id = load_texture("image/mars4k.jpg")
-    planet2_texture_id = load_texture("image/venus.jpg")
-    planet3_texture_id = load_texture("image/earth.jpg")
-    planet4_texture_id = load_texture("image/neptune.jpg")
-    planet5_texture_id = load_texture("image/jupiter.jpg")
-    planet6_texture_id = load_texture("image/saturn.jpg")
+    sun_texture_id = load_texture("OPENGL PROJECT/image/suns.jpg")
+    planet1_texture_id = load_texture("OPENGL PROJECT/image/mars4k.jpg")
+    planet2_texture_id = load_texture("OPENGL PROJECT/image/venus.jpg")
+    planet3_texture_id = load_texture("OPENGL PROJECT/image/earth.jpg")
+    planet4_texture_id = load_texture("OPENGL PROJECT/image/neptune.jpg")
+    planet5_texture_id = load_texture("OPENGL PROJECT/image/jupiter.jpg")
+    planet6_texture_id = load_texture("OPENGL PROJECT/image/saturn.jpg")
     angle = 0  # Una sola variable de ángulo para la rotación
-  
+    music()
     mouse_prev_pos = None
     mouse_pressed = False
 
@@ -153,7 +158,7 @@ def main():
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
          # Cargar textura del skybox
         glPushMatrix()
-        skybox_texture = load_texture("skybox/sta.jpg")
+        skybox_texture = load_texture("OPENGL PROJECT/skybox/sta.jpg")
         glBindTexture(GL_TEXTURE_2D, skybox_texture)
         glPopMatrix()
         # Dibujar el skybox
