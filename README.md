@@ -61,7 +61,8 @@ Additionally, background music is played using pygame.mixer, improving user imme
 
 
 # Showcase video link
-https://dri
+
+https://drive.google.com/drive/u/1/folders/16IBn-4lkfgrN5-uYVBhCWZQMV3WAcZ17
 
 ## Authors
 
