@@ -32,7 +32,7 @@ The solar system simulator is an interactive educational application developed i
 
 ### System solar
 
-![solar](https://github.com/Rayo070305/Proyecto_final_pg/blob/main/Documentacion/Imagenes%20referencia/slar.png)
+![solar](https://github.com/Rayo070305/Proyecto_final_pg/blob/main/Documentacion/Imagenes%20referencia/preof.png)
 
 
 # How we did it
