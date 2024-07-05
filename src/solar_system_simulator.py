@@ -1,4 +1,6 @@
 import pygame
+import subprocess
+
 from pygame.locals import *
 from OpenGL.GL import *
 from OpenGL.GLU import *
@@ -6,6 +8,31 @@ import math
 import glm
 import numpy as np
 import os
+
+
+def go_back():
+    subprocess.Popen(["python", "opengl project/src/presentacion.py"])
+    pygame.quit()
+    
+
+
+def setup_lighting():
+    glEnable(GL_LIGHTING)
+    glEnable(GL_LIGHT0)
+
+    # Configurar la luz
+    light_position = [0.0, 0.0, 0.0, 1.0]  # Posición del sol
+    light_color = [1.0, 1.0, 1.0, 1.0]  # Color de la luz (blanco)
+    ambient_light = [0.1, 0.1, 0.1, 1.0]  # Luz ambiental
+
+    glLightfv(GL_LIGHT0, GL_POSITION, light_position)
+    glLightfv(GL_LIGHT0, GL_DIFFUSE, light_color)
+    glLightfv(GL_LIGHT0, GL_SPECULAR, light_color)
+    glLightfv(GL_LIGHT0, GL_AMBIENT, ambient_light)
+
+
+    
+
 
 class Camera:
     def __init__(self, width, height, position, skybox_size):
@@ -46,10 +73,7 @@ class Camera:
             new_position = self.Position + self.speed * glm.normalize(glm.cross(self.Orientation, self.Up))
             if self.is_within_bounds(new_position):
                 self.Position = new_position
-        if keys[K_SPACE]:
-            new_position = self.Position + self.speed * self.Up
-            if self.is_within_bounds(new_position):
-                self.Position = new_position
+
         if keys[K_LCTRL]:
             new_position = self.Position + self.speed * -self.Up
             if self.is_within_bounds(new_position):
@@ -111,7 +135,6 @@ def load_textures_from_folder(folder_path):
 
     return textures
 
-
 def load_obj(filename):
     vertices = []
     faces = []
@@ -138,7 +161,6 @@ def load_obj(filename):
                     current_material_index = -1
 
     return vertices, faces, tex_coords, material_indices
-
 
 def draw_obj(vertices, faces, tex_coords, material_indices, textures):
     glEnable(GL_TEXTURE_2D)
@@ -243,6 +265,41 @@ def draw_rings(inner_radius, outer_radius, segments=100):
         glVertex3f(inner_radius * x, 0.0, inner_radius * z)
     glEnd()
 
+def draw_cube(size, texture_id):
+    glBindTexture(GL_TEXTURE_2D, texture_id)
+    glBegin(GL_QUADS)
+    # Front face
+    glTexCoord2f(0, 0); glVertex3f(-size, -size, size)
+    glTexCoord2f(1, 0); glVertex3f(size, -size, size)
+    glTexCoord2f(1, 1); glVertex3f(size, size, size)
+    glTexCoord2f(0, 1); glVertex3f(-size, size, size)
+    # Back face
+    glTexCoord2f(0, 0); glVertex3f(-size, -size, -size)
+    glTexCoord2f(1, 0); glVertex3f(size, -size, -size)
+    glTexCoord2f(1, 1); glVertex3f(size, size, -size)
+    glTexCoord2f(0, 1); glVertex3f(-size, size, -size)
+    # Left face
+    glTexCoord2f(0, 0); glVertex3f(-size, -size, -size)
+    glTexCoord2f(1, 0); glVertex3f(-size, -size, size)
+    glTexCoord2f(1, 1); glVertex3f(-size, size, size)
+    glTexCoord2f(0, 1); glVertex3f(-size, size, -size)
+    # Right face
+    glTexCoord2f(0, 0); glVertex3f(size, -size, -size)
+    glTexCoord2f(1, 0); glVertex3f(size, -size, size)
+    glTexCoord2f(1, 1); glVertex3f(size, size, size)
+    glTexCoord2f(0, 1); glVertex3f(size, size, -size)
+    # Top face
+    glTexCoord2f(0, 0); glVertex3f(-size, size, -size)
+    glTexCoord2f(1, 0); glVertex3f(size, size, -size)
+    glTexCoord2f(1, 1); glVertex3f(size, size, size)
+    glTexCoord2f(0, 1); glVertex3f(-size, size, size)
+    # Bottom face
+    glTexCoord2f(0, 0); glVertex3f(-size, -size, -size)
+    glTexCoord2f(1, 0); glVertex3f(size, -size, -size)
+    glTexCoord2f(1, 1); glVertex3f(size, -size, size)
+    glTexCoord2f(0, 1); glVertex3f(-size, -size, size)
+    glEnd()
+
 def music():
     pygame.mixer.init()
     pygame.mixer.music.load('OPENGL PROJECT/sounds/relax.mp3')
@@ -251,7 +308,13 @@ def music():
 
 def main():
     pygame.init()
-    display = (1280, 720)
+    
+    # Obtener la información de la pantalla
+    info = pygame.display.Info()
+    width, height = info.current_w, info.current_h
+    
+    # Configurar la pantalla con la resolución obtenida
+    display = (width, height)
     pygame.display.set_caption("Solar System by PG")
     pygame.display.set_mode(display, DOUBLEBUF | OPENGL)
 
@@ -260,7 +323,7 @@ def main():
 
     gluPerspective(60, (display[0] / display[1]), 0.1, 50.0)
 
-    skybox_size = 50 # Define el tamaño del skybox
+    skybox_size = 30 # Define el tamaño del skybox
     camera = Camera(display[0], display[1], [0.0, 0.0, 10.0], skybox_size)  # Crear la cámara
 
     sun_texture_id = load_texture("OPENGL PROJECT/image/suns.jpg")
@@ -275,10 +338,23 @@ def main():
     ring_texture_id = load_texture("OPENGL PROJECT/image/rings.jpg")  # los anillos de Saturno
     skybox_texture = load_texture("OPENGL PROJECT/skybox/stars.jpg")   #textura del skybox
 
-     # Cargar texturas
-    models_folder = 'OPENGL PROJECT/modelo'
+    
+    cube_texture_ids = [  # texturas para los cubos de cada planeta
+    load_texture("OPENGL PROJECT/image/mertx.jpg"),
+    load_texture("OPENGL PROJECT/image/venutx.jpg"),
+    load_texture("OPENGL PROJECT/image/earthtx.jpg"),
+    load_texture("opengl project/image/martx.jpg"),
+    load_texture("opengl project/image/juptx.jpg"),
+    load_texture("opengl project/image/sattx.jpg"),
+    load_texture("opengl project/image/uratx.jpg"),
+    load_texture("opengl project/image/neptx.jpg")
+    ]
+
+
+    # Cargar texturas
+    models_folder = 'opengl project/modelo'
     obj_files = ['Satellite.obj']
-    obj_textures_folder = 'OPENGL PROJECT/modelo/Textures/'
+    obj_textures_folder = 'opengl project/modelo/Textures/'
 
     obj_textures = load_textures_from_folder(obj_textures_folder)
     loaded_models = {}
@@ -289,16 +365,23 @@ def main():
         loaded_models[obj_file] = (vertices, faces, tex_coords, material_indices)
     angle = 0
     clock = pygame.time.Clock()
-    
-    
-    satellite_speed_multiplier = 15  # Ajusta este valor para aumentar la velocidad del satélite
+
+    satellite_speed_multiplier = 14 # Ajusta este valor para aumentar la velocidad del satélite
     satellite_angle = 0.0   
+
+    animation_running = True  # Bandera para controlar si la animación está en curso
     
+
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 quit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:
+                    animation_running = not animation_running  # Alternar la bandera de animación
+                if event.key == pygame.K_ESCAPE:  # Verificar si se presionó la tecla ESCAPE
+                    go_back()
 
         camera.inputs()  # Actualizar inputs de la cámara
         camera.update_matrix(60.0, 0.1, 50.0)  # Actualizar matriz de la cámara
@@ -329,10 +412,11 @@ def main():
             glColor3f(1.0, 1.0, 1.0)
             draw_orbit(planet_distances[i])
             glPopMatrix()
-            
-        angle += 0.01  # Incrementar el ángulo para la animación de los planetas
-        satellite_angle += 0.1 * satellite_speed_multiplier  # Incrementar el ángulo del satélite de forma independiente
-        
+
+        if animation_running:
+            angle += 0.01  # Incrementar el ángulo para la animación de los planetas
+            satellite_angle += 0.1 * satellite_speed_multiplier  # Incrementar el ángulo del satélite de forma independiente
+
         for i in range(len(planet_distances)):
             glPushMatrix()
             glRotatef(angle * planet_speeds[i], 0, 1, 0)
@@ -345,8 +429,6 @@ def main():
                 glPushMatrix()
                 glRotatef(45, 1, 0, 0)  # Rotar los anillos 45 grados alrededor del eje x
                 draw_rings(1.02 * planet_sizes[i], 1.3 * planet_sizes[i])
-
-
                 glPopMatrix()
             glPopMatrix()
 
@@ -358,10 +440,18 @@ def main():
         draw_obj(loaded_models['Satellite.obj'][0], loaded_models['Satellite.obj'][1], loaded_models['Satellite.obj'][2], loaded_models['Satellite.obj'][3], obj_textures)
         glPopMatrix()
 
-        pygame.display.flip()
-      
-        clock.tick(60)  # Asegurar 60 FPS
+        # Dibujar un cuadro encima de cada planeta con la etiqueta correspondiente
+        for i in range(len(planet_distances)):
+            glPushMatrix()
+            glRotatef(angle * planet_speeds[i], 0, 1, 0)
+            glTranslatef(planet_distances[i] * math.cos(angle * planet_speeds[i]), 1.3,  # Mover 1.5 unidades en el eje Y para posicionar encima del planeta
+                         planet_distances[i] * math.sin(angle * planet_speeds[i]))
+            draw_cube(0.3, cube_texture_ids[i])  # Dibujar un cubo más pequeño
+            glPopMatrix()
 
+        pygame.display.flip()
+
+        clock.tick(120)  
 
 if __name__ == "__main__":
     music()  # Reproducir música
