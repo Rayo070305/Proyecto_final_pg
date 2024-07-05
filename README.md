@@ -47,7 +47,7 @@ Additionally, background music is played using pygame.mixer, improving user imme
 
 ### Documentation:
 
-- [Documentation](<>)
+- [Documentation](<https://github.com/Rayo070305/Proyecto_final_pg/blob/main/Documentacion/Imagenes%20referencia/Documentacion_PG.pdf>)
 
 ## Built With
 
